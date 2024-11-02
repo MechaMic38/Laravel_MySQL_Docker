@@ -1,0 +1,136 @@
+networks:
+    app_network:
+        name: ${COMPOSE_PROJECT_NAME}
+        driver: bridge
+
+services:
+    sonar:
+        build:
+            context: .
+            dockerfile: ./docker/sonar.dockerfile
+        container_name: ${COMPOSE_PROJECT_NAME}_sonar
+        depends_on:
+            - php
+            - nginx
+        networks:
+            - app_network
+
+    nginx:
+        build:
+            context: .
+            dockerfile: ./docker/nginx.dockerfile
+            args:
+                - NGINX_VERSION=${NGINX_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_nginx
+        ports:
+            - ${HTTP_ON_HOST}:80
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        depends_on:
+            - php
+            - mysql
+        networks:
+            - app_network
+
+    php:
+        build:
+            context: .
+            dockerfile: ./docker/php.dockerfile
+            args:
+                - PHP_VERSION=${PHP_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_laravel
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        depends_on:
+            - mysql
+        networks:
+            - app_network
+
+    mysql:
+        image: mysql:${MYSQL_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_mysql
+        restart: unless-stopped
+        ports:
+            - ${MYSQL_ON_HOST}:3306
+        volumes:
+            - ./docker/database/data:/var/lib/mysql
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        networks:
+            - app_network
+
+    phpmyadmin:
+        image: phpmyadmin:${PHPMYADMIN_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_phpmyadmin
+        restart: unless-stopped
+        ports:
+            - ${PHPMYADMIN_ON_HOST}:80
+        environment:
+            - PMA_HOST=mysql
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        depends_on:
+            - mysql
+        networks:
+            - app_network
+
+    vite:
+        image: node:${NODE_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_vite
+        ports:
+            - ${VITE_ON_HOST}:5173
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        working_dir: /var/www/html
+        entrypoint: ["npm"]
+        command: ["run", "dev"]
+        depends_on:
+            - php
+        networks:
+            - app_network
+
+    composer:
+        build:
+            context: .
+            dockerfile: ./docker/php.dockerfile
+            args:
+                - PHP_VERSION=${PHP_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_composer
+        profiles:
+            - tools
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        working_dir: /var/www/html
+        entrypoint: ["php", "/usr/bin/composer"]
+        networks:
+            - app_network
+
+    artisan:
+        build:
+            context: .
+            dockerfile: ./docker/php.dockerfile
+            args:
+                - PHP_VERSION=${PHP_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_artisan
+        profiles:
+            - tools
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        working_dir: /var/www/html
+        entrypoint: ["php", "artisan"]
+        networks:
+            - app_network
+
+    npm:
+        image: node:${NODE_VERSION}
+        container_name: ${COMPOSE_PROJECT_NAME}_npm
+        profiles:
+            - tools
+        volumes:
+            - ${PATH_TO_CODE}:/var/www/html
+        working_dir: /var/www/html
+        entrypoint: ["npm"]
+        networks:
+            - app_network
