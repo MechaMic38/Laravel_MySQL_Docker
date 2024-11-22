@@ -29,7 +29,7 @@ def scan():
     print("")
     print(
         "Your application is starting and will be available at " +
-        "http://localhost:8080 when it's ready."
+        "http://localhost:8000 when it's ready."
     )
     print("")
 
