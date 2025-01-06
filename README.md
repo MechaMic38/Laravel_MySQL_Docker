@@ -1,6 +1,6 @@
-# FoodHub
+# Laravel 11 + MySQL + Docker
 
-Project for the Web Programming &amp; Digital Services course, plus the Human-Computer Interaction course, held at Università degli Studi di Brescia (Italy).
+Template for using Laravel + MySQL in a Docker environment.
 
 ## How To Use
 
@@ -13,7 +13,7 @@ First of all, you need to make a copy of the file `.env.example` in the project 
 For the first launch of the program, you must execute the following command. This creates all the containers necessary to run the application.
 
 ```bash
-docker compose up --build
+docker compose build
 ```
 
 After that completes, run the following to install and compile the dependencies for the application:
@@ -22,6 +22,13 @@ After that completes, run the following to install and compile the dependencies 
 docker compose run --rm composer install
 docker compose run --rm npm install
 docker compose run --rm npm run build
+```
+
+Finally, launch all application containers, and run the necessary migrations:
+
+```bash
+docker compose up
+docker compose run --rm artisan migrate
 ```
 
 ### Subsequent Launches
